@@ -41,7 +41,7 @@ def parse_examiners(soup:BeautifulSoup):
 
 
 def parse_appointment(soup: BeautifulSoup):
-	data = dict(date='', start='', end='', location='')
+	data = dict(date='-', start='-', end='-', location='-')
 
 	table = soup.find('table', {'summary': 'Übersicht über alle Veranstaltungstermine'})
 	if table is None:
@@ -76,15 +76,13 @@ def parse_appointment(soup: BeautifulSoup):
 		note = cells[8].text.strip()
 		if note:
 			data['note'] = note
-
 	return data
 
 
 def get_defense_data(soup:BeautifulSoup):
 	data = get_main_info(soup)
+	data.update(parse_appointment(soup))
 	data['examiners'] = parse_examiners(soup)
-		
-	data['appointment'] = parse_appointment(soup)
 	return data
 
 
@@ -178,14 +176,13 @@ def main():
 	json_filepath = 'defenses.json'
 	os.makedirs('./pages', exist_ok=True)
 
-	# overview_soup = get_soup(bison_overview_url)
-	overview_soup = get_saved_soup('overview.html')
-
+	overview_soup = get_soup(bison_overview_url)
 	new_crawl = get_all_defenses(overview_soup)
-	old_crawl = load_last_crawl(json_filepath)
-	new_items = get_new_defense_items(old_crawl, new_crawl)
-	print('these defenses new', list(new_items.keys()))
+	# old_crawl = load_last_crawl(json_filepath)
+	# new_items = get_new_defense_items(old_crawl, new_crawl)
+	# print('these defenses new', list(new_items.keys()))
 	save_crawl(new_crawl, json_filepath)
+	print("Posts fetched. Total:", len(new_crawl))
 
 if __name__ == '__main__':
 	bison_overview_url = 'https://bison.uni-weimar.de/qisserver/rds?state=wtree&search=1&P.vx=kurz&root120252=44747%7C44160%7C43798%7C44232%7C44238&trex=step'
