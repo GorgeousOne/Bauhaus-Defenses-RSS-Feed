@@ -4,8 +4,13 @@ Titel der Arbeit / *Title of the Thesis*:
 Datum und Uhrzeit / *Date and Time*:  
 {{ date }}, {{ start }} - {{ end }}  
 
+{% if location%}
 Ort / *Location*:  
 {{ location }}  
+{% elif not note%}
+Ort / *Location*:  
+(keine Angabe / *no information*)  
+{% endif %}
 
 {% if note %}
 Bemerkung / *Remarks*:  

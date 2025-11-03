@@ -86,7 +86,7 @@ def get_defense_data(soup:BeautifulSoup):
 	return data
 
 
-def get_soup(url):
+def get_soup(url, log):
 	id_match = re.search(r'publishid=(\d+)', url)
 	if id_match:
 		id = id_match.group(1)
@@ -101,7 +101,7 @@ def get_soup(url):
 			return BeautifulSoup(text, 'html.parser')
 
 	if id_match:
-		print(f'query {id}...')
+		log.info(f'fetching publishid {id}...')
 	response = requests.get(url)
 	response.raise_for_status()
 	text = response.text
@@ -126,19 +126,19 @@ def get_defense_urls(soup:BeautifulSoup):
 	return [a['href'] for a in defense_entries]
 
 
-def get_all_defenses(overview_soup:BeautifulSoup):
+def get_all_defenses(overview_soup:BeautifulSoup, log):
 	defense_urls = get_defense_urls(overview_soup)
 	defenses = {}
 
 	for url in defense_urls:
-		defense_soup = get_soup(url)
+		defense_soup = get_soup(url, log)
 		id = re.search(r'publishid=(\d+)', url).group(1) 
 		try:
 			data = get_defense_data(defense_soup)
 			data['url'] = url
 			defenses[id]= data
 		except Exception as e:
-			print(f'error parsing {id}:', e)
+			log.exception(f'error parsing {id}: {e}')
 	return defenses
 
 
@@ -171,18 +171,15 @@ def test_save(url, filename, prettify=False):
 		f.write(html)
 	
 
-def main():
+def main(log):
 	bison_overview_url = 'https://bison.uni-weimar.de/qisserver/rds?state=wtree&search=1&P.vx=kurz&root120252=44747%7C44160%7C43798%7C44232%7C44238&trex=step'
 	json_filepath = 'defenses.json'
 	os.makedirs('./pages', exist_ok=True)
 
-	overview_soup = get_soup(bison_overview_url)
-	new_crawl = get_all_defenses(overview_soup)
-	# old_crawl = load_last_crawl(json_filepath)
-	# new_items = get_new_defense_items(old_crawl, new_crawl)
-	# print('these defenses new', list(new_items.keys()))
+	overview_soup = get_soup(bison_overview_url, log)
+	new_crawl = get_all_defenses(overview_soup, log)
 	save_crawl(new_crawl, json_filepath)
-	print("Posts fetched. Total:", len(new_crawl))
+	log.info(f'Posts fetched. Total: {len(new_crawl)}')
 
 if __name__ == '__main__':
 	bison_overview_url = 'https://bison.uni-weimar.de/qisserver/rds?state=wtree&search=1&P.vx=kurz&root120252=44747%7C44160%7C43798%7C44232%7C44238&trex=step'

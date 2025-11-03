@@ -25,11 +25,11 @@ def load_posts():
 		defenses = json.load(f)
 	asc_defenses = sorted(list(defenses.values()), key=lambda d: datetime.strptime(d['date'], "%d.%m.%Y"), reverse=True)
 	posts_cache = [render_template(template, d) for d in asc_defenses]
-	print('Posts reloaded. Total:', len(posts_cache))
+	LOG.info(f'Posts reloaded. Total: {len(posts_cache)}')
 
 
 def fetch_defenses():
-	crawl.main()
+	crawl.main(LOG)
 	load_posts()
 
 
@@ -51,7 +51,14 @@ def render_template(template_str, defense):
 def startup_event():
 	fetch_defenses() 
 	scheduler = BackgroundScheduler()
-	scheduler.add_job(load_posts, 'interval', hours=6, id='reload_posts_job', replace_existing=True)
+	scheduler.add_job(
+		fetch_defenses,
+		trigger='cron',
+		hour='0,6,12,18',
+		minute=0,
+		id='reload_posts_job',
+		replace_existing=True
+	)
 	scheduler.start()
 
 	app.state.scheduler = scheduler
